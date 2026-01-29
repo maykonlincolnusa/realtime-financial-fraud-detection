@@ -1,3 +1,150 @@
-# realtime-financial-fraud-detection
-realtime-financial-fraud-detection
-Detectar fraudes financeiras em tempo real usando streaming, regras + ML + grafos.
+Projeto: Real-time Financial Fraud Detection (Streaming + Rules + ML + Graphs)
+
+Descrição: Repositório completo para um sistema de detecção de fraudes financeiras em tempo real que combina streaming ingestion, motor de regras, modelos de ML (offline e online), e análise em grafos para detecção de fraudes complexas (anéis de fraude, contas ligadas, comportamento anômalo). O objetivo é entregar um projeto pronto para GitHub que você possa clonar, rodar localmente com docker-compose e produzir deploy em Kubernetes/Terraform para produção.
+
+> Linguagem principal: Python (com pontos em Java/Scala para Flink/Spark se desejar ampliar). Arquitetura pensada pra ser cloud-agnostic (AWS/GCP/Azure).
+
+
+
+
+---
+
+Sumário
+
+1. Visão geral e arquitetura
+
+
+2. Estrutura do repositório (todas as pastas e arquivos)
+
+
+3. Dependências e bibliotecas
+
+
+4. Instruções rápidas: rodar local (docker-compose)
+
+
+5. Componentes (detalhado) + exemplos de código
+
+
+6. Deploy: Kubernetes + Terraform (esqueleto)
+
+
+7. Observabilidade, segurança e CI/CD
+
+
+8. Testes e dados de exemplo
+
+
+9. Como estender: modelos, features, grafos
+
+
+
+
+---
+
+1. Visão geral / Arquitetura
+
+Arquitetura de alto nível:
+
+Ingestão em tempo real: Kafka (topics para transações, logs, autenticações)
+
+Stream Processing: Apache Flink (PyFlink) ou Kafka Streams / Streamz (Python) para enrich, pré-processamento, janelamento
+
+Motor de Regras: Drools (Java) ou engine leve em Python (durable_rules / regras declarativas customizadas)
+
+Score ML (online): Model serving via MLflow or Seldon Core / BentoML; chamadas síncronas ao avaliar transações
+
+Feature Store: Feast para features online/offline
+
+Graph DB: Neo4j (ou JanusGraph + Cassandra) para identificação de redes de contas e link analysis
+
+Storage: MinIO (S3 compatible) para dados brutos e modelos; Postgres para OLTP; ClickHouse/ClickHouse Cloud para agregados analíticos
+
+Batch Training & Orquestração: Airflow ou Prefect (pipelines de treino, validação e promoção de modelos)
+
+Model Registry: MLflow
+
+API & Dashboard: FastAPI para alertas e visualização; Grafana + Kibana para métricas e logs
+
+Infra local: docker-compose para dev; Helm charts + Terraform para produção
+
+
+Fluxo simplificado:
+
+1. Produtor envia transações ao Kafka.
+
+
+2. Stream processor enriquece eventos (geoloc, device fingerprint), aplica regras de rejeição rápida e envia eventos para model scoring.
+
+
+3. Model server responde com score de fraude; se acima de threshold, criar alerta e persistir no Postgres/Elasticsearch.
+
+
+4. Paralelamente, alimentar grafo (Neo4j) para análise de conexões e gatilhos de investigação manual/automática.
+
+
+5. Feedback (labels) voltam para offline training para re-treino contínuo.
+
+
+
+
+---
+
+2. Estrutura do repositório (tree)
+
+fraud-detection-realtime/
+├── README.md
+├── LICENSE
+├── .gitignore
+├── docker-compose.yml           # ambiente local com Kafka, Zookeeper, MinIO, Neo4j, Postgres, MLFlow, Grafana
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── infra/
+│   ├── kubernetes/             # k8s manifests / helm charts
+│   └── terraform/              # skeleton terraform for cloud infra
+├── deployments/                 # dockerfiles and manifests for each component
+│   ├── ingestion/Dockerfile
+│   ├── processor/Dockerfile
+│   ├── model-server/Dockerfile
+│   └── api/Dockerfile
+├── docs/
+│   ├── architecture.md
+│   ├── run_local.md
+│   ├── design_decisions.md
+│   └── security.md
+├── scripts/
+│   ├── create_kafka_topics.sh
+│   └── seed_data.py
+├── data/                        # dados de exemplo e schemas
+│   ├── sample_transactions.json
+│   └── schema_transaction.avsc
+├── notebooks/
+│   ├── eda.ipynb
+│   └── model_training_example.ipynb
+├── src/
+│   ├── ingestion/
+│   │   └── producer.py
+│   ├── processor/
+│   │   ├── stream_processor.py
+│   │   └── rules_engine.py
+│   ├── ml/
+│   │   ├── training/
+│   │   │   └── train_model.py
+│   │   └── scoring/
+│   │       └── scorer_client.py
+│   ├── graph/
+│   │   └── neo4j_loader.py
+│   ├── api/
+│   │   └── app.py
+│   └── utils/
+│       ├── schemas.py
+│       └── feature_utils.py
+├── tests/
+│   ├── unit/
+│   └── integration/
+├── requirements.txt
+├── pyproject.toml
+├── alembic/                     # migrations for Postgres
+└── helm/                        # optional helm charts
+
