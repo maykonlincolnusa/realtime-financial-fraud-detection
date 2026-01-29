@@ -1,0 +1,15 @@
+# clonar
+git clone git@github.com:SEU-USER/fraud-detection-realtime.git
+cd fraud-detection-realtime
+# build images (opcional)
+docker-compose build
+# subir stack local
+docker-compose up -d
+# criar tópicos
+./scripts/create_kafka_topics.sh
+# iniciar produtores de teste
+python src/ingestion/producer.py --sample data/sample_transactions.json
+# iniciar processor
+python src/processor/stream_processor.py
+# rodar API
+uvicorn src.api.app:app --reload --port 8000
