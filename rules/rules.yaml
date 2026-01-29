@@ -1,0 +1,10 @@
+rules:
+  - id: high_amount
+    type: threshold
+    field: amount
+    value: 10000
+  - id: rapid_transactions
+    type: velocity
+    field: account_id
+    window_minutes: 1
+    count: 5
