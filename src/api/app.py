@@ -1,7 +1,7 @@
 # src/api/app.py
 
 from fastapi import FastAPI
-from src.api.routes import (
+from src.api.routers import (
     alerts,
     transactions,
     graph
